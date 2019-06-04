@@ -42,12 +42,12 @@ class CartSafeEnv(gym.Env):
         including the termination step
 
     Constraint Cost:
-        We constrain position and velocity of the cart. Every time step that the cart violates these constraints we return an
-        immediate cost of 1 for every violated constraint.
-        The constraint costs are returned inside the info dict.
+        We constrain the position of the cart. Every time step that the cart violates these constraints we return an
+        immediate cost of 1 for the violated constraint. For Constrained Markov Decision Problems (CMDPs) we typically
+        want to have a threshold for the expected cumulative constraint costs.
+        The immediate constraint costs are returned inside the info dict.
         Constraints:
-            -1.5 < Cart Position < 1.5
-            -3   < Cart Velocity < 3
+            -1 < Cart Position < 1
 
 
     Starting State:
@@ -56,9 +56,9 @@ class CartSafeEnv(gym.Env):
 
     Episode Termination:
         Cart Position is more than 2.4 (center of the cart reaches the edge of the display)
-        Episode length is greater than 200
+        Episode length is greater than 300
         Solved Requirements
-        Considered solved when the average reward is greater than or equal to 195.0 over 100 consecutive trials.
+        Considered solved when the average reward is greater than or equal to 150.0 over 100 consecutive trials.
     """
     
     metadata = {
@@ -77,18 +77,22 @@ class CartSafeEnv(gym.Env):
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = 'euler'
 
+        # use constraint_costs for reward_shaping
+        self.reward_shaping = False
+        self.constraint_multiplier = 10
+
         # Angle at which to fail the episode
-        self.theta_threshold_radians = 12 * 2 * math.pi / 360
+        # self.theta_threshold_radians = 12 * 2 * math.pi / 360
         self.x_threshold = 2.4
 
-        self.x_constraint = 1.5
-        self.x_dot_constraint = 3
+        self.x_constraint = 1.0
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
             self.x_threshold * 2,
             np.finfo(np.float32).max,
-            self.theta_threshold_radians * 2,
+            # self.theta_threshold_radians * 2,
+            math.pi,
             np.finfo(np.float32).max])
 
         self.action_space = spaces.Discrete(2)
@@ -110,11 +114,11 @@ class CartSafeEnv(gym.Env):
         else:
             x_cost = 0
 
-        if np.abs(x_dot) > self.x_dot_constraint:
-            x_dot_cost = 1
-        else:
-            x_dot_cost = 0
-        return [x_cost, x_dot_cost]
+        # if np.abs(x_dot) > self.x_dot_constraint:
+        #     x_dot_cost = 1
+        # else:
+        #     x_dot_cost = 0
+        return [x_cost]
 
 
     def step(self, action):
@@ -157,8 +161,14 @@ class CartSafeEnv(gym.Env):
             reward = -1.0
 
         constraint_costs = self.constraint_cost(x, x_dot)
-
+        if self.reward_shaping:
+            reward -= self.constraint_multiplier*np.sum(constraint_costs)
         return np.array(self.state), reward, done, {'constraint_costs': constraint_costs}
+
+    def use_reward_shaping(self, multiplier=1):
+        self.reward_shaping = True
+        self.constraint_multiplier= multiplier
+
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
