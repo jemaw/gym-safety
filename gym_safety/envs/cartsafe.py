@@ -12,6 +12,8 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
+# TODO: step counter, done when above threshold
+
 class CartSafeEnv(gym.Env):
     """
     Description:
@@ -103,6 +105,8 @@ class CartSafeEnv(gym.Env):
         self.state = None
 
         self.steps_beyond_done = None
+        self.steps = 0
+        self.max_steps = 300
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -122,6 +126,7 @@ class CartSafeEnv(gym.Env):
 
 
     def step(self, action):
+        self.steps += 1
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
         x, x_dot, theta, theta_dot = state
@@ -143,7 +148,8 @@ class CartSafeEnv(gym.Env):
             theta = theta + self.tau * theta_dot
         self.state = (x,x_dot,theta,theta_dot)
         done =  x < -self.x_threshold \
-                or x > self.x_threshold #\
+                or x > self.x_threshold \
+                or self.steps >= self.max_steps
                 # or theta < -self.theta_threshold_radians \
                 # or theta > self.theta_threshold_radians
         done = bool(done)
@@ -163,6 +169,7 @@ class CartSafeEnv(gym.Env):
         constraint_costs = self.constraint_cost(x, x_dot)
         if self.reward_shaping:
             reward -= self.constraint_multiplier*np.sum(constraint_costs)
+
         return np.array(self.state), reward, done, {'constraint_costs': constraint_costs}
 
     def use_reward_shaping(self, multiplier=1):
@@ -174,6 +181,7 @@ class CartSafeEnv(gym.Env):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.state[2] += math.pi
         self.steps_beyond_done = None
+        self.steps = 0
         return np.array(self.state)
 
     def render(self, mode='human'):

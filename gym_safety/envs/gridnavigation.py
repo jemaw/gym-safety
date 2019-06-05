@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
+# TODO: step counter, done when above threshold
+
 
 class GridNavigationEnv(gym.Env):
     """"
@@ -71,6 +73,9 @@ class GridNavigationEnv(gym.Env):
         self.action_space = None
         self.observation_space = None
 
+        self.max_steps = 200
+        self.steps = 0
+
         self.EMPTY_CHAR = ' '
         self.OBSTACLE_CHAR = '#'
         self.PLAYER_CHAR = 'P'
@@ -92,6 +97,7 @@ class GridNavigationEnv(gym.Env):
         }
         self.seed(42)
         self.make_game()
+
 
     def make_game(self, gridsize=32, rho=0.3, stochasticity=0.1, img_observation=False):
         """Builds and returns a navigation game."""
@@ -153,6 +159,7 @@ class GridNavigationEnv(gym.Env):
 
 
     def reset(self):
+        self.steps = 0
         self.state = self.start_state
         if self.img_observation:
             obs = self.state_to_img()
@@ -175,6 +182,7 @@ class GridNavigationEnv(gym.Env):
 
 
     def step(self, action):
+        self.steps += 1
         if np.random.binomial(1, self.stochasticity):
             action = np.random.randint(0,4)
 
@@ -196,6 +204,9 @@ class GridNavigationEnv(gym.Env):
             reward = 1000
         elif self.state.tolist() in self.obstacle_states:
             info['constraint_costs'] = [1]
+
+        if self.steps >= self.max_steps:
+            done = True
 
         if self.img_observation:
             obs = self.state_to_img()
