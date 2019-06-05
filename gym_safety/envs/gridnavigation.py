@@ -5,20 +5,71 @@ Openai Gym version
 # import curses
 import gym
 from gym.utils import seeding
+from gym import spaces
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
 
-
 class GridNavigationEnv(gym.Env):
+    """"
+    Description:
+        This game is used as simple environment for testing reinforcement learning algorithms that are built for safety.
+        It is an unnoficial implementation of the one described in "A Lyapunov-based Approach to Safe Reinforcement Learning":
+            https://arxiv.org/abs/1805.07708
+        The goal for the player is to reach the end-state without violating constraints, here these constraints are modelled as
+        immediate cost when hitting an obstacle and the constraint is to have the cumulative constraint cost below a certain threshold.
+        The environment is stochastic, sometimes the agent performs a random action, instead of the chosen one
+
+    Observation:
+        this environment has two modes: the observation is either a one-hot encoding of the player position or an RGB image of the complete board
+
+
+    Actions:
+        Type: Discrete(4)
+        Num	Action
+        0	Go Down
+        1	Go Left
+        2       Go up
+        3       Go right
+
+    Reward:
+        Every action has a negative fuel reward of -1. If the final state is reached the reward is 1000.
+
+    Constraint Cost:
+        If an obstacle is hit the constraint cost is 1, else 0
+
+
+    Starting State:
+        The agent always starts at the bottom right
+
+    Epsiode Termination:
+        - the agent reaches the goal state
+        - Episode length is greater than 200
+
+    Parameters:
+
+        gridsize  (int): size of the game, default: 32
+        rho (float):                density, meaning probability for obstacle, default: 0.3
+        stochasticity (float):      probability for random action, default: 0.1
+        img_observation (bool):     whether to use an img_observation or a one-hot encoding of the player position, default: false
+
+        Note: currently we use the make_game function to customize the game, it would also be possible to register different types of games
+        similar to how openai does for the atari games https://github.com/openai/gym/blob/7006c7a182a991b9409c206c56abc121eaffafb5/gym/envs/__init__.py
+
+    """
     def __init__(self):
         self.gridsize = None
         self.rho = None
         self.stochasticity = None
-        self.threshold = None
         self.cumulat_constraint = 0
         self.state = None
+        self.start_state = None
+        self.goal_state = None
+        self.img_observation = None
+
+        self.action_space = None
+        self.observation_space = None
 
         self.EMPTY_CHAR = ' '
         self.OBSTACLE_CHAR = '#'
@@ -32,26 +83,6 @@ class GridNavigationEnv(gym.Env):
                          self.OBSTACLE_CHAR: (0, 0, 1),      # obstacle
                      }
 
-        self.seed(42)
-        self.make_game()
-        self.fig = None
-
-    def make_game(self, gridsize=6, rho=0.3, stochasticity=0.1, threshold=5):
-        """Builds and returns a navigation game."""
-        self.gridsize = gridsize
-        self.rho = rho
-        self.stochasticity = stochasticity
-        self.threshold = threshold
-        self.art = self.build_asci_art(gridsize, rho).reshape((gridsize, gridsize))
-
-        # self.start_state = np.zeros_like(self.art, dtype=np.uint8)
-        # self.start_state[-1, -1] = 1
-        self.start_state = np.array([gridsize-1, gridsize -1])
-
-        self.state = self.start_state
-
-        self.art_img = self.get_art_img()
-
         self.ACTIONS = {
             0: np.array([-1,0]),
             1: np.array([0,-1]),
@@ -59,6 +90,30 @@ class GridNavigationEnv(gym.Env):
             3: np.array([0,1])
 
         }
+        self.seed(42)
+        self.make_game()
+
+    def make_game(self, gridsize=32, rho=0.3, stochasticity=0.1, img_observation=False):
+        """Builds and returns a navigation game."""
+        self.gridsize = gridsize
+        self.rho = rho
+        self.stochasticity = stochasticity
+        self.art = self.build_asci_art(gridsize, rho).reshape((gridsize, gridsize))
+        self.img_observation = img_observation
+
+        self.start_state = np.array([gridsize-1, gridsize -1])
+        self.goal_state = np.argwhere(self.art == self.GOAL_CHAR)[0]
+
+        self.state = self.start_state
+        self.obstacle_states = np.argwhere(self.art == self.OBSTACLE_CHAR).tolist()
+
+        self.art_img = self.get_art_img()
+
+        self.action_space = spaces.Discrete(4)
+        if self.img_observation:
+            self.observation_space = spaces.Box(0, 1, shape=(self.gridsize, self.gridsize, 3), dtype=np.float32)
+        else:
+            self.observation_space = spaces.Box(0, 1, shape=(self.gridsize*self.gridsize,), dtype=np.float32)
 
     def build_asci_art(self, gridsize, rho):
         art = []
@@ -99,12 +154,23 @@ class GridNavigationEnv(gym.Env):
 
     def reset(self):
         self.state = self.start_state
+        if self.img_observation:
+            obs = self.state_to_img()
+        else:
+            obs = self.state_to_oh()
+        return obs
 
     def state_to_img(self):
         img = self.art_img.copy()
         i, j = self.state
         img[i,j,:] = self.FG_COLORS[self.PLAYER_CHAR]
         return img
+
+    def state_to_oh(self):
+        obs = np.zeros((self.gridsize*self.gridsize))
+        state_i, state_j = self.state
+        obs[state_i*self.gridsize + state_j] = 1
+        return obs
 
 
 
@@ -121,6 +187,22 @@ class GridNavigationEnv(gym.Env):
            new_state_y >= self.gridsize):
             self.state = new_state
 
+        reward = -1
+        done = False
+        info = {'constraint_costs':[0]}
+
+        if (self.state == self.goal_state).all():
+            done = True
+            reward = 1000
+        elif self.state.tolist() in self.obstacle_states:
+            info['constraint_costs'] = [1]
+
+        if self.img_observation:
+            obs = self.state_to_img()
+        else:
+            obs = self.state_to_oh()
+
+        return obs, reward, done, info
 
 
     def render(self, mode='human'):
@@ -137,77 +219,3 @@ class GridNavigationEnv(gym.Env):
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
-
-
-
-# class PlayerSprite(prefab_sprites.MazeWalker):
-#     """
-#     A `Sprite` for our player, the maze explorer.
-#     This egocentric `Sprite` requires no logic beyond tying actions to
-#     `MazeWalker` motion action helper methods, which keep the player from walking
-#     on top of obstacles.
-#     """
-#     def __init__(self, corner, position, character):
-#         """Constructor: player is egocentric and can't walk through walls."""
-#         super(PlayerSprite, self).__init__(
-#             corner, position, character, impassable='', confined_to_board=True)
-#         # self._teleport(virtual_position)
-
-#     def update(self, actions, board, layers, backdrop, things, the_plot):
-
-
-#         # del backdrop, things, layers  # Unused
-#         # fuel consumption
-#         if actions != 5:
-#             the_plot.add_reward(-1)
-#             # stochasticity
-#             if np.random.binomial(1, the_plot['stochasticity']):
-#                 actions = np.random.randint(0,4)
-
-#             if actions == 0:    # go upward?
-#                 self._north(board, the_plot)
-#             elif actions == 1:  # go downward?
-#                 self._south(board, the_plot)
-#             elif actions == 2:  # go leftward?
-#                 self._west(board, the_plot)
-#             elif actions == 3:  # go rightward?
-#                 self._east(board, the_plot)
-#             elif actions == 4:  # do nothing?
-#                 the_plot.terminate_episode()
-        
-
-#             if layers[GOAL_CHAR][self.position]:
-#                 the_plot.add_reward(1000)
-#                 the_plot.terminate_episode()
-
-#             if layers[OBSTACLE_CHAR][self.position]:
-#                 the_plot['cumulat_constraint'] += 1
-#                 if the_plot['cumulat_constraint'] >= the_plot['threshold']:
-#                     the_plot.log('Threshold violated')
-#                     # the_plot.add_reward(-1000)
-#                     # the_plot.terminate_episode()
-
-
-# def main(argv=()):
-#   del argv  # Unused.
-
-
-#   # Build a Hello World game.
-#   game = make_game(gridsize, rho, stochasticity, threshold)
-
-#   # Log a message in its Plot object.
-#   game.the_plot.log('Hello, world!')
-
-#   # Make a CursesUi to play it with.
-#   ui = human_ui.CursesUi(
-#       keys_to_actions={curses.KEY_UP: 0, curses.KEY_DOWN: 1, curses.KEY_LEFT: 2,
-#                        curses.KEY_RIGHT: 3, 'q': 4, 'Q': 4, -1: 5},
-#       delay=50, colour_fg=FG_COLORS)
-
-#   # Let the game begin!
-#   ui.play(game)
-#   print(game.the_plot['cumulat_constraint'])
-
-
-# if __name__ == '__main__':
-#   main(sys.argv)
