@@ -19,7 +19,7 @@ class CartSafeEnv(gym.Env):
         The pendulum starts hanging down, and the goal is to swing it up by increasing and reducing the cart's velocity.
 
     Source:
-        This environment corresponds to the version of the cart-pole problem described by Barto, Sutton, and Anderson
+        This environment is a modified version of the cart-pole problem described by Barto, Sutton, and Anderson
 
     Observation: 
         Type: Box(4)
