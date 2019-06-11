@@ -219,11 +219,13 @@ class GridNavigationEnv(gym.Env):
         """very minimalistic rendering"""
         img = self.state_to_img()
         img = cv2.resize(img, (self.display_size,self.display_size), interpolation=cv2.INTER_NEAREST)
-        fig = plt.figure(0)
-        plt.clf()
-        plt.imshow(img)
-        fig.canvas.draw()
-        plt.pause(0.00001)
+        if mode == 'human':
+            fig = plt.figure(0)
+            plt.clf()
+            plt.imshow(img)
+            fig.canvas.draw()
+            plt.pause(0.00001)
+        return img
 
 
     def seed(self, seed=None):
