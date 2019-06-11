@@ -12,8 +12,6 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
-# TODO: check angle implementation
-
 class CartSafeEnv(gym.Env):
     """
     Description:
@@ -81,10 +79,6 @@ class CartSafeEnv(gym.Env):
         self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = 'euler'
-
-        # use constraint_costs for reward_shaping
-        self.reward_shaping = False
-        self.constraint_multiplier = 10
 
         # Angle at which to fail the episode
         # self.theta_threshold_radians = 12 * 2 * math.pi / 360
@@ -174,14 +168,9 @@ class CartSafeEnv(gym.Env):
             reward = -1.0
 
         constraint_costs = self.constraint_cost(x, x_dot)
-        if self.reward_shaping:
-            reward -= self.constraint_multiplier*np.sum(constraint_costs)
 
         return np.array(self.state), reward, done, {'constraint_costs': constraint_costs}
 
-    def use_reward_shaping(self, multiplier=1):
-        self.reward_shaping = True
-        self.constraint_multiplier= multiplier
 
 
     def reset(self):
