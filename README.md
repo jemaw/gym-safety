@@ -36,4 +36,4 @@ Everytime an obstacle is hit it returns a constraint cost of 1.
 The paper solves this by assuming that there already exists a safe baseline policy and then improving this policy without violating the threshold on the cumulative constraint cost.
 
 ## References
-[1] [A Lyapunov-based Approach to Safe Reinforcement Learning][https://arxiv.org/abs/1805.07708]
+[1] [A Lyapunov-based Approach to Safe Reinforcement Learning](https://arxiv.org/abs/1805.07708)
