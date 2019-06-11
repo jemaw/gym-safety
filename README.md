@@ -30,9 +30,10 @@ For every step outside of the region a constraint cost of 1 is returned.
 
 ### GridNav-v0
 
-This is an unofficial implementation of the environment used by [A Lyapunov-based Approach to Safe Reinforcement Learning][1].
+This is an unofficial implementation of the environment used by [[1]](#references).
 Here the goal is to navigate inside a gridworld without hitting obstacles.
 Everytime an obstacle is hit it returns a constraint cost of 1.
 The paper solves this by assuming that there already exists a safe baseline policy and then improving this policy without violating the threshold on the cumulative constraint cost.
 
-[1]: https://arxiv.org/abs/1805.07708
+## References
+[1] [A Lyapunov-based Approach to Safe Reinforcement Learning][https://arxiv.org/abs/1805.07708]
