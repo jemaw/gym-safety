@@ -10,8 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-# TODO: done when above threshold
-
+DEFAULT_SEED = 42
 
 class GridNavigationEnv(gym.Env):
     """"
@@ -23,17 +22,13 @@ class GridNavigationEnv(gym.Env):
         immediate cost when hitting an obstacle and the constraint is to have the cumulative constraint cost below a certain threshold.
         The environment is stochastic, sometimes the agent performs a random action, instead of the chosen one.
 
-    Parameters:
-
-        gridsize  (int): size of the game, default: 32
+    Parameters for customize game:
+        seed (float):               seed for creating the game, can also be None for random seed
         rho (float):                density, meaning probability for obstacle, default: 0.3
         stochasticity (float):      probability for random action, default: 0.1
         img_observation (bool):     whether to use an img_observation or a one-hot encoding of the player position, default: false
 
-        Note: currently we use the make_game function to customize the game, 
-        it would also be possible to register different types of games
-        similar to how openai does for the atari games:
-            https://github.com/openai/gym/blob/7006c7a182a991b9409c206c56abc121eaffafb5/gym/envs/__init__.py
+        Note: v0 has gridsize 25 and v1 has grisize 60 for further customization use the customize_game function
 
     Observation:
         this environment has two modes: the observation is either a one-hot encoding of the player position or an RGB image of the complete board
@@ -63,10 +58,11 @@ class GridNavigationEnv(gym.Env):
 
 
     """
-    def __init__(self):
-        self.gridsize = None
-        self.rho = None
-        self.stochasticity = None
+    def __init__(self, gridsize=32):
+        self.gridsize = gridsize
+        self.rho = 0.3
+        self.stochasticity = 0.1
+        self.img_observation = False
         self.cumulat_constraint = 0
         self.state = None
         self.start_state = None
@@ -76,8 +72,6 @@ class GridNavigationEnv(gym.Env):
         self.action_space = None
         self.observation_space = None
 
-        self.max_steps = 200
-        self.steps = 0
 
         self.EMPTY_CHAR = ' '
         self.OBSTACLE_CHAR = '#'
@@ -98,19 +92,25 @@ class GridNavigationEnv(gym.Env):
             3: np.array([0,1])
 
         }
-        self.seed(42)
+        self.seed(DEFAULT_SEED)
+        self.make_game()
+
+    def customize_game(self, seed=DEFAULT_SEED, rho=None, stochasticity=None, img_observation=None):
+        self.seed(seed)
+        if not rho is None:
+            self.rho = rho
+        if not stochasticity is None:
+            self.stochasticity = stochasticity
+        if not img_observation is None:
+            self.img_observation = img_observation
         self.make_game()
 
 
-    def make_game(self, gridsize=32, rho=0.3, stochasticity=0.1, img_observation=False):
+    def make_game(self):
         """Builds and returns a navigation game."""
-        self.gridsize = gridsize
-        self.rho = rho
-        self.stochasticity = stochasticity
-        self.art = self.build_asci_art(gridsize, rho).reshape((gridsize, gridsize))
-        self.img_observation = img_observation
+        self.art = self.build_asci_art(self.gridsize, self.rho).reshape((self.gridsize, self.gridsize))
 
-        self.start_state = np.array([gridsize-1, gridsize -1])
+        self.start_state = np.array([self.gridsize-1, self.gridsize -1])
         self.goal_state = np.argwhere(self.art == self.GOAL_CHAR)[0]
 
         self.state = self.start_state
@@ -162,7 +162,6 @@ class GridNavigationEnv(gym.Env):
 
 
     def reset(self):
-        self.steps = 0
         self.state = self.start_state
         if self.img_observation:
             obs = self.state_to_img()
@@ -185,7 +184,6 @@ class GridNavigationEnv(gym.Env):
 
 
     def step(self, action):
-        self.steps += 1
         if np.random.binomial(1, self.stochasticity):
             action = np.random.randint(0,4)
 
@@ -208,8 +206,6 @@ class GridNavigationEnv(gym.Env):
         elif self.state.tolist() in self.obstacle_states:
             info['constraint_costs'] = [1]
 
-        if self.steps >= self.max_steps:
-            done = True
 
         if self.img_observation:
             obs = self.state_to_img()
