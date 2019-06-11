@@ -1,7 +1,8 @@
 # Gym Safety
 
 This repository provides unofficial simple environments for reseaerch on safety in reinforcement learning.
-All environments provide the Openai gym interface.
+All environments provide the Openai gym interface and are usable without mujoco.
+The goal is to have some easily accessible environments where people can test their algorithms for safe rl.
 
 ## Installation
 Clone the repository and then type the following in the root directory of it:
@@ -13,6 +14,11 @@ Installs the environments for the current user.
 ## Environments
 The Environments use the model of constrained markov decision processes (CMDPs) where at each step the environment not only returns a reward but also an immediate constraint cost.
 The goal is to find an optimal policy while keeping the cumulative constraint costs below a threshold.
+
+The constraint cost is returned inside the info dictionary and can be accessed using
+```python
+c_cost = info['constraint_cost']
+```
 
 ### CartSafe-v0
 
