@@ -17,8 +17,10 @@ The goal is to find an optimal policy while keeping the cumulative constraint co
 
 The constraint cost is returned inside the info dictionary and can be accessed using
 ```python
+observation, reward, done, info = env.step(action)
 c_cost = info['constraint_cost']
 ```
+For more information about the individual environments see the docstrings in the implementation files.
 
 ### CartSafe-v0
 

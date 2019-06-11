@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-# TODO: step counter, done when above threshold
+# TODO: done when above threshold
 
 
 class GridNavigationEnv(gym.Env):
@@ -21,7 +21,19 @@ class GridNavigationEnv(gym.Env):
             https://arxiv.org/abs/1805.07708
         The goal for the player is to reach the end-state without violating constraints, here these constraints are modelled as
         immediate cost when hitting an obstacle and the constraint is to have the cumulative constraint cost below a certain threshold.
-        The environment is stochastic, sometimes the agent performs a random action, instead of the chosen one
+        The environment is stochastic, sometimes the agent performs a random action, instead of the chosen one.
+
+    Parameters:
+
+        gridsize  (int): size of the game, default: 32
+        rho (float):                density, meaning probability for obstacle, default: 0.3
+        stochasticity (float):      probability for random action, default: 0.1
+        img_observation (bool):     whether to use an img_observation or a one-hot encoding of the player position, default: false
+
+        Note: currently we use the make_game function to customize the game, 
+        it would also be possible to register different types of games
+        similar to how openai does for the atari games:
+            https://github.com/openai/gym/blob/7006c7a182a991b9409c206c56abc121eaffafb5/gym/envs/__init__.py
 
     Observation:
         this environment has two modes: the observation is either a one-hot encoding of the player position or an RGB image of the complete board
@@ -49,15 +61,6 @@ class GridNavigationEnv(gym.Env):
         - the agent reaches the goal state
         - Episode length is greater than 200
 
-    Parameters:
-
-        gridsize  (int): size of the game, default: 32
-        rho (float):                density, meaning probability for obstacle, default: 0.3
-        stochasticity (float):      probability for random action, default: 0.1
-        img_observation (bool):     whether to use an img_observation or a one-hot encoding of the player position, default: false
-
-        Note: currently we use the make_game function to customize the game, it would also be possible to register different types of games
-        similar to how openai does for the atari games https://github.com/openai/gym/blob/7006c7a182a991b9409c206c56abc121eaffafb5/gym/envs/__init__.py
 
     """
     def __init__(self):
