@@ -12,7 +12,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
-# TODO: step counter, done when above threshold
+# TODO: check angle implementation
 
 class CartSafeEnv(gym.Env):
     """
@@ -28,8 +28,10 @@ class CartSafeEnv(gym.Env):
         Num	Observation                 Min         Max
         0	Cart Position             -4.8            4.8
         1	Cart Velocity             -Inf            Inf
-        2	Pole Angle                 -24 deg        24 deg
+        2	Pole Angle                 0              2*math.pi
         3	Pole Velocity At Tip      -Inf            Inf
+
+        Note: angle state is only up to 2*Pi, meaning e.g. 1*Pi is the same state as 3*Pi
         
     Actions:
         Type: Discrete(2)
@@ -40,7 +42,7 @@ class CartSafeEnv(gym.Env):
         Note: The amount the velocity that is reduced or increased is not fixed; it depends on the angle the pole is pointing. This is because the center of gravity of the pole increases the amount of energy needed to move the cart underneath it
 
     Reward:
-        Since we want the agent to learn to swing up our Reward is cos(Pole Angle) for every step taken,
+        Since we want the agent to learn to swing up our Reward is 1+cos(Pole Angle) for every step taken,
         including the termination step
 
     Constraint Cost:
@@ -60,7 +62,8 @@ class CartSafeEnv(gym.Env):
         Cart Position is more than 2.4 (center of the cart reaches the edge of the display)
         Episode length is greater than 300
         Solved Requirements
-        Considered solved when the average reward is greater than or equal to 150.0 over 100 consecutive trials.
+        Considered solved when the average reward is greater than or equal to 520 over 100 consecutive trials.
+            A reward of 520 corresponds approx to a lower bound for an epsiode of 300 steps with 75% of the time in between an angle of [-12,12] degrees.
     """
     
     metadata = {
@@ -94,19 +97,24 @@ class CartSafeEnv(gym.Env):
             self.x_threshold * 2,
             np.finfo(np.float32).max,
             # self.theta_threshold_radians * 2,
-            math.pi,
+            2*math.pi,
+            np.finfo(np.float32).max])
+
+        low = -np.array([
+            self.x_threshold * 2,
+            np.finfo(np.float32).max,
+            # self.theta_threshold_radians * 2,
+            0,
             np.finfo(np.float32).max])
 
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+        self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
         self.seed()
         self.viewer = None
         self.state = None
 
         self.steps_beyond_done = None
-        self.steps = 0
-        self.max_steps = 300
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -126,7 +134,6 @@ class CartSafeEnv(gym.Env):
 
 
     def step(self, action):
-        self.steps += 1
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
         x, x_dot, theta, theta_dot = state
@@ -146,20 +153,20 @@ class CartSafeEnv(gym.Env):
             x  = x + self.tau * x_dot
             theta_dot = theta_dot + self.tau * thetaacc
             theta = theta + self.tau * theta_dot
+        theta = theta % (2*math.pi)
         self.state = (x,x_dot,theta,theta_dot)
         done =  x < -self.x_threshold \
-                or x > self.x_threshold \
-                or self.steps >= self.max_steps
+                or x > self.x_threshold
                 # or theta < -self.theta_threshold_radians \
                 # or theta > self.theta_threshold_radians
         done = bool(done)
 
         if not done:
-            reward = np.math.cos(theta)
+            reward = 1+np.math.cos(theta)
         elif self.steps_beyond_done is None:
             # Pole just fell!
             self.steps_beyond_done = 0
-            reward = np.math.cos(theta)
+            reward = 1+np.math.cos(theta)
         else:
             if self.steps_beyond_done == 0:
                 logger.warn("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
@@ -181,7 +188,6 @@ class CartSafeEnv(gym.Env):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.state[2] += math.pi
         self.steps_beyond_done = None
-        self.steps = 0
         return np.array(self.state)
 
     def render(self, mode='human'):
