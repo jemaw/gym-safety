@@ -11,6 +11,13 @@ pip install --user .
 ```
 Installs the environments for the current user.
 
+## Usage
+```python
+import gym
+import gym_safety
+env = gym.make('CartSafe-v0')
+```
+
 ## Environments
 The Environments use the model of constrained markov decision processes (CMDPs) where at each step the environment not only returns a reward but also an immediate constraint cost.
 The goal is to find an optimal policy while keeping the cumulative constraint costs below a threshold.
