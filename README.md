@@ -1,6 +1,6 @@
 # Gym Safety
 
-This repository provides unofficial simple environments for reseaerch on safety in reinforcement learning.
+This repository provides unofficial simple environments for research on safety in reinforcement learning.
 All environments provide the Openai gym interface and are usable without mujoco.
 The goal is to have some easily accessible environments where people can test their algorithms for safe rl.
 
