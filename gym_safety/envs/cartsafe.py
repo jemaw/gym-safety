@@ -218,9 +218,11 @@ class CartSafeEnv(gym.Env):
 
             self.constr_line_l = rendering.Line((-self.x_constraint*scale + screen_width/2., carty-100), 
                                               (-self.x_constraint*scale + screen_width/2., carty+1000))
+            self.constr_line_l.set_color(1,0,0)
             self.viewer.add_geom(self.constr_line_l)
             self.constr_line_r = rendering.Line((self.x_constraint*scale + screen_width/2., carty-100), 
                                               (self.x_constraint*scale + screen_width/2., carty+1000))
+            self.constr_line_r.set_color(1,0,0)
             self.viewer.add_geom(self.constr_line_r)
 
 
