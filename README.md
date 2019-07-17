@@ -51,7 +51,7 @@ It is a very challenging environment, because a positive reward is only given fo
 This means that the exploration strategy needs to find the sparse reward while still obeying the constraints.
 
 ## Future Goals
-Implement Pybullet Alternatives of the environments used in [[2]](#references and [[3]](#references):
+Implement Pybullet Alternatives of the environments used in [[2]](#references) and [[3]](#references):
 - Point-Gather
 - Point-Circle
 - Ant-Gather
@@ -59,12 +59,14 @@ Implement Pybullet Alternatives of the environments used in [[2]](#references an
 - Humanoid-Circle
 - HalfCheetah-Safe
 
-This might also happen in the [pybullet-gym](https://github.com/benelot/pybullet-gym) repository
+This might also happen in the [pybullet-gym](https://github.com/benelot/pybullet-gym) repository.
 
 
 
 
 ## References
 [1] [A Lyapunov-based Approach to Safe Reinforcement Learning](https://arxiv.org/abs/1805.07708)
+
 [2] [Lyapunov-based Safe Policy Optimization for Continuous Control](https://arxiv.org/abs/1901.10031)
+
 [3] [Constrained Policy Optimization](https://arxiv.org/abs/1705.10528)
