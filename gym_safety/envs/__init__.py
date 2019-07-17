@@ -1,2 +1,3 @@
 from gym_safety.envs.cartsafe import CartSafeEnv
 from gym_safety.envs.gridnavigation import GridNavigationEnv
+from gym_safety.envs.continuous_mountain_car_safe import Continuous_MountainCarSafeEnv

@@ -42,5 +42,13 @@ Here the goal is to navigate inside a gridworld without hitting obstacles.
 Everytime an obstacle is hit it returns a constraint cost of 1.
 The paper solves this by assuming that there already exists a safe baseline policy and then improving this policy without violating the threshold on the cumulative constraint cost.
 
+### MountainCarContinuousSafe-v0
+
+This is a modification of the [original](https://gym.openai.com/envs/MountainCarContinuous-v0/) `MountainCarContinuous` environment from openai gym.
+The goal is to drive a cart up a hill by going back and forth and building up momentum.
+The constraint is to not go too far to the left (indicated by red line in visualization), every step the cart is too far on the left a cost of 1 is received.
+It is a very challenging environment, because a positive reward is only given for reaching the goal.
+This means that the exploration strategy needs to find the sparse reward while still obeying the constraints.
+
 ## References
 [1] [A Lyapunov-based Approach to Safe Reinforcement Learning](https://arxiv.org/abs/1805.07708)

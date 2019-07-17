@@ -20,3 +20,10 @@ register(
     kwargs={'gridsize': 60},
     max_episode_steps=200
 )
+
+register(
+    id='MountainCarContinuousSafe-v0',
+    entry_point='gym_safety.envs:Continuous_MountainCarSafeEnv',
+    reward_threshold=90,
+    max_episode_steps=999,
+)
