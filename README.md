@@ -35,6 +35,8 @@ This is a modification of the original `CartPole-v0` environment provided by ope
 In `CartSafe-v0` the goal is to swing up the pendulum from the bottom while staying in a certain region.
 For every step outside of the region a constraint cost of 1 is returned.
 
+![CartSafe-v0](assets/cartsafe.png)
+
 ### GridNav-v0
 
 This is an unofficial implementation of the environment used by [[1]](#references).
@@ -42,6 +44,7 @@ Here the goal is to navigate inside a gridworld without hitting obstacles.
 Everytime an obstacle is hit it returns a constraint cost of 1.
 The paper solves this by assuming that there already exists a safe baseline policy and then improving this policy without violating the threshold on the cumulative constraint cost.
 
+![GridNav-v0](assets/grid.png)
 ### MountainCarContinuousSafe-v0
 
 This is a modification of the [original](https://gym.openai.com/envs/MountainCarContinuous-v0/) `MountainCarContinuous` environment from openai gym.
@@ -50,6 +53,7 @@ The constraint is to not go too far to the left (indicated by red line in visual
 It is a very challenging environment, because a positive reward is only given for reaching the goal.
 This means that the exploration strategy needs to find the sparse reward while still obeying the constraints.
 
+![MountainCarContinuousSafe-v0](assets/mountain.png)
 ## Future Goals
 Implement Pybullet Alternatives of the environments used in [[2]](#references and [[3]](#references):
 - Point-Gather
