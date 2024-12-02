@@ -74,7 +74,7 @@ class CartSafeEnv(gym.Env):
         self.masscart = 1.0
         self.masspole = 0.1
         self.total_mass = (self.masspole + self.masscart)
-        self.length = 0.5 # actually half the pole's length
+        self.length = 1 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
@@ -155,6 +155,9 @@ class CartSafeEnv(gym.Env):
                 # or theta > self.theta_threshold_radians
         done = bool(done)
 
+        truncated = x < -self.x_threshold \
+                or x > self.x_threshold
+
         if not done:
             reward = 1+np.math.cos(theta)
         elif self.steps_beyond_done is None:
@@ -169,7 +172,7 @@ class CartSafeEnv(gym.Env):
 
         constraint_costs = self.constraint_cost(x, x_dot)
 
-        return np.array(self.state), reward, done, {'constraint_costs': constraint_costs}
+        return np.array(self.state), reward, done, truncated, {'constraint_costs': constraint_costs}
 
 
 
